@@ -36,7 +36,7 @@ class DiscordServer {
     this.discordBot = discordBot
     this.bot = this.discordBot.bot
 
-    this.server = this.bot.guilds.resolve(id)
+    this.server = this.bot.guilds.get(id)
 
     this.verifyCooldowns = new Map()
     this.nicknames = new Map()
@@ -341,7 +341,7 @@ class DiscordServer {
     }
 
     if (this.getSetting('announceChannel')) {
-      const channel = await this.server.channels.cache.get(this.getSetting('announceChannel'))
+      const channel = await this.server.channels.get(this.getSetting('announceChannel'))
 
       if (channel) {
         try {
@@ -359,14 +359,14 @@ class DiscordServer {
 
       if (this.server.systemChannel) {
         try {
-          await this.server.systemChannel.send(`${this.server.owner} An important notice was triggered and there is no announcement channel configured and the server owner will not accept DMs from RoVer, so it has been posted here:`, { embed })
+          await this.server.systemChannel.send(`${this.server.owner} An important notice was triggered and there is no announcement channel configured and the server owner will not accept DMs from Verification, so it has been posted here:`, { embed })
           return
         } catch (e) {}
       }
 
       if (options.lastResortChannel) {
         try {
-          await options.lastResortChannel.send(`${this.server.owner} An important notice was triggered and there is no announcement channel configured and the server owner will not accept DMs from RoVer, so it has been posted here as a last resort:`, { embed })
+          await options.lastResortChannel.send(`${this.server.owner} An important notice was triggered and there is no announcement channel configured and the server owner will not accept DMs from Verification, so it has been posted here as a last resort:`, { embed })
         } catch (e) {}
       }
     }
@@ -418,16 +418,6 @@ class DiscordServer {
     }
 
     return false
-  }
-
-  canManageRole (roleResolvable) {
-    if (!this.server.me.hasPermission('MANAGE_ROLES')) return false
-
-    const role = this.server.roles.cache.get(roleResolvable)
-
-    if (!role) return false
-
-    return this.server.me.roles.highest.comparePositionTo(role) > 0
   }
 }
 

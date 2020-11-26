@@ -57,8 +57,8 @@ class DiscordMember {
    */
   async prepareMember () {
     try {
-      this.user = await this.bot.users.fetch(this.id, true)
-      this.member = await this.server.members.fetch(this.user, true)
+      this.user = await this.bot.users.fetch(this.id, false)
+      this.member = await this.server.members.fetch(this.user, false)
       return true
     } catch (e) {
       if (config.loud) console.log(`prepareMember: ${e.message}; ${this.id}; ${this.user}`)
@@ -128,7 +128,7 @@ class DiscordMember {
 
     let data = {}
     let freshData = false
-    const errorAppend = ''
+    let errorAppend = ''
 
     if (!this.discordServer.areSettingsLoaded) {
       await this.discordServer.loadSettings()
@@ -156,18 +156,6 @@ class DiscordMember {
       await DiscordServer.clearMemberCache(this.id)
     }
 
-    // Fetch newest data? Please?
-    this.member = await this.server.members.fetch({
-      user: this.user,
-      cache: false
-    })
-
-    // Fetch newest data? Please?
-    this.member = await this.server.members.fetch({
-      user: this.user,
-      cache: false
-    })
-
     // If options.message is provided, we reply to that message with a status update
     // and edit it with new info throughout the verification. It's also called upon
     // this function returning output, so we need a default state for it to be a
@@ -176,7 +164,7 @@ class DiscordMember {
 
     if (options.message) {
       // Create the status message and save initial information.
-      const statusMessage = await options.message.reply(':thought_balloon: Checking permissions...')
+      const statusMessage = await options.message.reply(':bulb: Working...')
 
       // We don't want to edit the message too quickly, otherwise Discord will throttle us. T
       // This limits edits to one per second but keeps it up to date after at least 1 second passes.
@@ -189,8 +177,8 @@ class DiscordMember {
         // A self-invoking async function so that we can delay the message sending if necessary,
         // but we don't delay the return value.
         ;(async () => {
-          if ((new Date()).getTime() - lastEdit < 5000) {
-            await Util.sleep(5000 - ((new Date()).getTime() - lastEdit))
+          if ((new Date()).getTime() - lastEdit < 1000) {
+            await Util.sleep(1000 - ((new Date()).getTime() - lastEdit))
 
             if (editIndex !== thisIndex) {
               // A new message has been sent since this was called, so ignore it.
@@ -231,31 +219,26 @@ class DiscordMember {
     if (this.user.bot) {
       return status({
         status: false,
-        error: ':robot: RoVer cannot verify bots.'
+        error: ':robot: Verification cannot verify bots.'
       })
     }
 
     // Ignore users with this specific role (to give server owners more power)
-    if (this.member.roles.cache.find(role => role.name === 'RoVer Bypass')) {
+    if (this.member.roles.find(role => role.name === 'Verification Bypass')) {
       return status({
         status: false,
-        error: ':octagonal_sign: RoVer cannot act on users with the "RoVer Bypass" role.',
+        error: ':octagonal_sign: Verification cannot act on users with the "Verification Bypass" role.',
         nonFatal: true
       })
     }
 
-    const botMember = this.server.me
-
-    if (!this.member.manageable || !botMember.hasPermission('MANAGE_ROLES')) {
-      return status({
-        status: false,
-        error: this.member.guild.ownerID === this.member.id ? '\n\nYou are the server owner. RoVer cannot make changes to you. This is a Discord restriction. If you want, you can change your own nickname.' : "\n\nRoVer's can't manage this user. Please have a server admin drag RoVer's role above all other roles and ensure RoVer has permission to modify roles in order to fix this problem.",
-        nonFatal: true
-      })
+    // Create a warning to append to any errors. In some permission setups, RoVer is reliant on role positioning (specifically if it has administrator or not)
+    this.server.members.fetch(this.bot.id, true)
+    if (!this.member.manageable) {
+      errorAppend = "\n\nVerification's position in the role list is below that of this user. Please have a server admin drag Verification's role above all other roles in order to fix this problem."
     }
 
     status(':scroll: Checking the verification registry...')
-
     try {
       // Read user data from memory, or request it if there isn't any cached.
       data = await Cache.get('users', this.id)
@@ -321,7 +304,7 @@ class DiscordMember {
 
       if (this.discordServer.getSetting('verifiedRole')) {
         const role = this.discordServer.getSetting('verifiedRole')
-        if (!this.member.roles.cache.has(role) && this.server.roles.cache.has(role) && this.discordServer.canManageRole(role)) {
+        if (!this.member.roles.has(role) && this.server.roles.has(role)) {
           try {
             await this.member.roles.add(role)
           } catch (e) {
@@ -329,7 +312,7 @@ class DiscordMember {
             return status({
               status: false,
               nonFatal: true,
-              error: "There was an error while trying to assign the verified role! Ensure RoVer's role is above it." + errorAppend
+              error: "There was an error while trying to assign the verified role! Ensure Verification's role is above it." + errorAppend
             })
           }
         }
@@ -337,7 +320,7 @@ class DiscordMember {
 
       if (this.discordServer.getSetting('verifiedRemovedRole')) {
         const role = this.discordServer.getSetting('verifiedRemovedRole')
-        if (this.member.roles.cache.has(role) && this.server.roles.cache.has(role) && this.discordServer.canManageRole(role)) {
+        if (this.member.roles.has(role) && this.server.roles.has(role)) {
           try {
             await this.member.roles.remove(role)
           } catch (e) {
@@ -345,7 +328,7 @@ class DiscordMember {
             return status({
               status: false,
               nonFatal: true,
-              error: "There was an error while trying to remove the verified role! Ensure RoVer's role is above it." + errorAppend
+              error: "There was an error while trying to remove the verified role! Ensure Verification's role is above it." + errorAppend
             })
           }
         }
@@ -353,8 +336,7 @@ class DiscordMember {
 
       if (
         this.discordServer.getSetting('nicknameUsers') &&
-        !this.member.roles.cache.find(role => role.name === 'RoVer Nickname Bypass') &&
-        botMember.hasPermission('MANAGE_NICKNAMES')
+        !this.member.roles.find(role => role.name === 'Verification Nickname Bypass')
       ) {
         const nickname = (await this.getNickname(data)).substring(0, 32)
 
@@ -368,7 +350,7 @@ class DiscordMember {
             return status({
               status: false,
               nonFatal: true,
-              error: this.member.guild.ownerID === this.member.id ? "Sorry, Discord doesn't allow bots to change the server owner's nickname. Please manually update your nickname. Or don't, I'm just an error message." : "RoVer doesn't have permission to change that user's nickname." + errorAppend
+              error: this.member.guild.ownerID === this.member.id ? "Sorry, Discord doesn't allow bots to change the server owner's nickname. Please manually update your nickname. Or don't, I'm just an error message." : "Verification doesn't have permission to change that user's nickname." + errorAppend
             })
           }
         }
@@ -394,12 +376,10 @@ class DiscordMember {
           // We use a Promise.then here so that they all execute asynchronously.
           promises.push(DiscordServer.resolveGroupRankBinding(binding, data.robloxId, data.robloxUsername)
             .then((state) => {
-              const hasRole = this.member.roles.cache.get(binding.role) != null
+              const hasRole = this.member.roles.get(binding.role) != null
               if (hasRole === state) return
 
-              if (!this.server.roles.cache.has(binding.role)) return
-
-              if (!this.discordServer.canManageRole(binding.role)) return
+              if (!this.server.roles.has(binding.role)) return
 
               if (state === true) {
                 this.member.roles.add(binding.role).catch(e => {})
@@ -413,7 +393,6 @@ class DiscordMember {
         try {
           await Promise.all(promises)
         } catch (e) {
-          console.log(e)
           return status({
             status: false,
             nonFatal: true,
@@ -441,10 +420,7 @@ class DiscordMember {
 
           if (this.discordServer.getSetting('verifiedRemovedRole')) {
             try {
-              const role = this.discordServer.getSetting('verifiedRemovedRole')
-              if (!role || !this.discordServer.canManageRole(role)) return
-
-              await this.member.roles.add(role)
+              await this.member.roles.add(this.discordServer.getSetting('verifiedRemovedRole'))
             } catch (e) {}
           }
 

@@ -13,6 +13,8 @@ class PingCommand extends Command {
   }
 
   async fn (msg) {
-    msg.reply(`:ping_pong: Pong! Latency to Discord: ${this.client.ws.ping}ms.`)
+    msg.channel.send('Pinging...').then(message => {
+      message.edit(`:ping_pong: Pong! Took **${message.createdTimestamp - msg.createdTimestamp}ms**`)
+    })
   }
 }

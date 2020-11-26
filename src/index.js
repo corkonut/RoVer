@@ -13,15 +13,14 @@ const Util = require('./Util.js')
 const shardingManager = new Discord.ShardingManager(path.join(__dirname, 'Shard.js'), {
   token: config.token,
   totalShards: config.totalShards || 'auto',
-  shardArgs: typeof v8debug === 'object' ? ['--inspect'] : undefined,
-  execArgv: ['--trace-warnings']
+  shardArgs: typeof v8debug === 'object' ? ['--inspect'] : undefined
 })
 
 shardingManager.on('shardCreate', shard => {
   console.log(`Launching shard ${shard.id + 1}/${shardingManager.totalShards}`)
 })
 
-shardingManager.spawn(config.totalShards || 'auto', 8000, -1)
+shardingManager.spawn('auto', 1000, 30000)
 
 // Instantiate a GlobalCache, which will cache information from the shards.
 global.GlobalCache = new GlobalCache(shardingManager)
@@ -40,15 +39,15 @@ async function getNextActivity () {
 
   switch (currentActivity) {
     case 0:
-      return { text: 'https://RoVer.link' }
+      return { text: 'Join Crikan tribes!' }
     case 1: {
-      let totalGuilds = (await shardingManager.fetchClientValues('guilds.cache.size')).reduce((prev, val) => prev + val, 0)
+      let totalGuilds = (await shardingManager.fetchClientValues('guilds.size')).reduce((prev, val) => prev + val, 0)
       totalGuilds = Util.toHumanReadableNumber(totalGuilds)
       return { text: `${totalGuilds} servers`, type: 'WATCHING' }
     } case 2:
-      return { text: `${totalUsers} users`, type: 'LISTENING' }
+      return { text: `how the genre grows`, type: 'WATCHING' }
     case 3:
-      return { text: '!rover', type: 'LISTENING' }
+      return { text: 'to Gerdafonik', type: 'LISTENING' }
   }
 }
 
@@ -57,14 +56,14 @@ request('https://verify.eryn.io/api/count')
     totalUsers = Util.toHumanReadableNumber(count)
   })
 
-/*setInterval(async () => {
+setInterval(async () => {
   if (shardingManager.shards.size === shardingManager.totalShards) {
     shardingManager.broadcast({
       action: 'status',
       argument: await getNextActivity()
     })
   }
-}, 15000)*/
+}, 15000)
 
 // If updateServer is defined, start that up as well.
 if (config.updateServer) {

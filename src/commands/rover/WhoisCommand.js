@@ -94,7 +94,7 @@ class WhoisCommand extends Command {
             })
 
             const membershipType = JSON.parse(response.body).membershipType
-            bc = 'Regular'
+            bc = 'NBC'
 
             if (membershipType === 4) {
               bc = 'Premium'
@@ -159,7 +159,7 @@ class WhoisCommand extends Command {
           })
         }
 
-        if (Contributors.includes(id)) embed.fields.push({ name: 'User Tags', value: 'RoVer Contributor', inline: true })
+        if (Contributors.includes(id)) embed.fields.push({ name: 'User Tags', value: 'Verification Contributor', inline: true })
 
         editMessage.edit({ embed: embed }).catch(console.error)
       } else {

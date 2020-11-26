@@ -22,10 +22,6 @@ class CreateGroupRanksCommand extends Command {
   }
 
   async fn (msg, args) {
-    if (!msg.guild.me.hasPermission('MANAGE_ROLES')) {
-      return msg.reply("RoVer needs the 'Manage Roles' permission in order to do this.")
-    }
-
     if (this.server.ongoingSettingsUpdate) return msg.reply('Server settings are currently being saved - please try again in a few moments.')
     try {
       const { Roles } = await request(`https://api.roblox.com/groups/${args.groupid}`, { json: true })
@@ -33,7 +29,7 @@ class CreateGroupRanksCommand extends Command {
       const serverBindings = this.server.getSetting('groupRankBindings')
       Roles.reverse()
       for (const role of Roles) {
-        const newRole = (await msg.guild.roles.cache.find(guildRole => guildRole.name === role.Name)) || (await msg.guild.roles.create({
+        const newRole = (await msg.guild.roles.find(guildRole => guildRole.name === role.Name)) || (await msg.guild.roles.create({
           data: {
             name: role.Name,
             permissions: []

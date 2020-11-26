@@ -11,16 +11,16 @@ const request = require('request-promise')
  * Check if the given user is in the Roblox Dev Forum.
  *
  * @param {object} user The user data
- * @returns {object} The DevForum profile data
+ * @returns {object} The DebForum profile data
  */
 async function getDevForumProfile (user) {
-  const userId = user.id
+  const username = user.username
   let userProfile = await Cache.get(`bindings.${user.id}`, 'DevForumProfile')
 
   if (!userProfile) {
     try {
       const devForumData = await request({
-        uri: `https://devforum.roblox.com/u/by-external/${userId}.json`,
+        uri: `https://devforum.roblox.com/users/${username}.json`,
         json: true,
         simple: false
       })
@@ -92,10 +92,7 @@ module.exports = {
       return true
     }
 
-    // !userTrustLevel also returns true when it is 0, causing it to return false
-    // this is why we check it with == null, in case it is actually 0
-    // if trustLevelCheck is null now, that means their trust level is 0
-    if (trustLevelCheck == null || userTrustLevel == null || !trustLevelCheck(userTrustLevel) || userProfile.suspended_till) {
+    if (!userTrustLevel || !trustLevelCheck(userTrustLevel) || userProfile.suspended_till) {
       return false
     }
 
@@ -110,20 +107,12 @@ module.exports = {
     return module.exports.DevForumAccess(user, x => x === 1)
   },
 
-  async DevForumMember (user) { // old, left for compatibility
+  async DevForumMember (user) {
     return module.exports.DevForumAccess(user, x => x >= 2)
-  },
-
-  async DevForumVisitor (user) {
-    return module.exports.DevForumAccess(user, x => x === 0)
   },
 
   async DevForumNewMember (user) {
     return module.exports.DevForumAccess(user, x => x === 1)
-  },
-
-  async DevForumRegular (user) {
-    return module.exports.DevForumAccess(user, x => x >= 2)
   },
 
   /**
