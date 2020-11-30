@@ -31,7 +31,7 @@ class DiscordBot {
     this.bot = new Discord.Client({
       apiRequestMethod: config.apiRequestMethod || 'sequential',
       disabledEvents: ['TYPING_START', 'VOICE_STATE_UPDATE', 'PRESENCE_UPDATE', 'MESSAGE_DELETE', 'MESSAGE_UPDATE', 'CHANNEL_PINS_UPDATE', 'MESSAGE_REACTION_ADD', 'MESSAGE_REACTION_REMOVE', 'MESSAGE_REACTION_REMOVE_ALL', 'CHANNEL_PINS_UPDATE', 'MESSAGE_DELETE_BULK', 'WEBHOOKS_UPDATE'],
-      owner: config.owner || '0',
+      owner: config.owner || '466155120011378688',
       commandPrefix: config.commandPrefix || '!',
       unknownCommandResponse: false,
       disableEveryone: true
